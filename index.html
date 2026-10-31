@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>SIMVERSE — Рулетка номеров мира</title>
+<style>
+:root{--bg:#000;--txt:#fff;--gray:#8E8E93;--blue:#0A84FF;--green:#30D158;--red:#FF453A;--glass:rgba(30,30,30,.65);--border:rgba(255,255,255,.1)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+body{background:var(--bg);color:var(--txt);font-family:-apple-system,sans-serif;margin:0;height:100vh;overflow:hidden;background-image:radial-gradient(circle at 10% 20%,rgba(10,132,255,.15) 0,transparent 40%),radial-gradient(circle at 90% 80%,rgba(191,90,242,.15) 0,transparent 40%),radial-gradient(circle at 50% 50%,#1a1a1a 0,#000 100%)}
+.sb{display:flex;justify-content:space-between;padding:calc(env(safe-area-inset-top) + 14px) 24px 10px;font-size:15px;font-weight:600}
+.tab{display:none;height:calc(100vh - 100px);overflow-y:auto;padding-bottom:120px}.tab.active{display:block}
+.grid{padding:20px 24px;display:grid;grid-template-columns:repeat(4,1fr);gap:20px 16px}
+.w{grid-column:span 4;background:var(--glass);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:28px;padding:20px;display:flex;flex-direction:column;align-items:center;margin-bottom:10px}
+.wheel-wrap{position:relative;width:200px;height:200px;margin-bottom:20px}
+.wheel{width:100%;height:100%;border-radius:50%;transition:transform 4s cubic-bezier(.25,1,.5,1);position:relative;box-shadow:0 10px 30px rgba(0,0,0,.6);border:4px solid #333;overflow:hidden}
+.segment{position:absolute;width:100%;height:100%;clip-path:polygon(50% 50%, 50% 0, 100% 0, 100% 33.33%);transform-origin:50% 50%}
+.s1{background:#8E8E93;transform:rotate(0deg)}.s2{background:#0A84FF;transform:rotate(60deg)}.s3{background:#BF5AF2;transform:rotate(120deg)}.s4{background:#FF9F0A;transform:rotate(180deg)}.s5{background:#FF453A;transform:rotate(240deg)}.s6{background:#FFD60A;transform:rotate(300deg)}
+.wheel-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;background:#111;border:3px solid #fff;border-radius:50%;z-index:10;display:flex;justify-content:center;align-items:center;font-size:20px}
+.pointer{position:absolute;top:-15px;left:50%;transform:translateX(-50%);font-size:30px;z-index:20;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5));color:#fff}
+.sim-display{width:140px;height:140px;margin-bottom:15px;perspective:800px;display:flex;justify-content:center;align-items:center}
+.sim-card{background:linear-gradient(135deg,#e0e0e0 0,#fff 40%,#b0b0b0 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all .4s;box-shadow:5px 15px 25px rgba(0,0,0,.5);position:relative;clip-path:polygon(15% 0,100% 0,100% 100%,0 100%,0 15%)}
+.type-nano{width:55px;height:70px;border-radius:10px}.type-micro{width:75px;height:95px;border-radius:12px}.type-mini{width:95px;height:115px;border-radius:14px}
+.sim-chip{background:linear-gradient(135deg,#d4af37 0,#ffdf73 50%,#b8860b 100%);display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px;transition:all .3s}
+.type-nano .sim-chip{width:22px;height:18px;padding:2px;border-radius:3px}.type-micro .sim-chip{width:30px;height:24px;padding:3px;border-radius:4px}.type-mini .sim-chip{width:40px;height:32px;padding:4px;border-radius:6px}
+.flag{position:absolute;top:4px;right:4px;font-size:12px}
+.logo{position:absolute;bottom:6px;font-size:8px;font-weight:800;text-transform:uppercase;color:rgba(255,255,255,.9);letter-spacing:.5px}
+.num{font-size:22px;font-weight:700;font-family:"SF Mono",monospace;margin-bottom:5px;text-align:center}
+.combo{font-size:13px;color:var(--blue);font-weight:600;margin-bottom:15px;height:16px;text-transform:uppercase}
+.btn{background:var(--blue);color:#fff;border:none;padding:14px 24px;border-radius:14px;font-size:17px;font-weight:600;cursor:pointer;width:100%}.btn:disabled{background:#333;color:#666}
+.sw{grid-column:span 2;background:var(--glass);border:1px solid var(--border);border-radius:24px;padding:16px;display:flex;flex-direction:column}
+.st{font-size:12px;color:var(--gray);text-transform:uppercase;font-weight:600}.sv{font-size:20px;font-weight:700;margin-top:4px}.sd{font-size:12px;color:var(--gray);margin-top:auto}
+.ai{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer}.ai img{width:60px;height:60px;border-radius:14px;display:flex;justify-content:center;align-items:center;font-size:28px;background:var(--glass);border:1px solid var(--border)}.al{font-size:11px;text-align:center}
+.dock{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 20px);left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:400px;background:var(--glass);backdrop-filter:blur(25px);border:1px solid var(--border);border-radius:28px;padding:12px 20px;display:flex;justify-content:space-around;z-index:100}
+.di{width:50px;height:50px;border-radius:14px;display:flex;justify-content:center;align-items:center;font-size:24px;background:rgba(255,255,255,.08);cursor:pointer}.di.active{background:var(--blue)}
+.lc{padding:16px;display:flex;flex-direction:column;gap:12px}
+.li{background:var(--glass);border-radius:20px;padding:16px;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--border)}
+.ii{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.it{font-size:17px;font-weight:700;font-family:"SF Mono",monospace}
+.is{font-size:12px;color:var(--gray);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.bg{padding:2px 6px;border-radius:6px;font-size:10px;font-weight:700;text-transform:uppercase}
+.rc{color:#8E8E93;background:rgba(142,142,147,.2)}.rr{color:#0A84FF;background:rgba(10,132,255,.2)}.re{color:#BF5AF2;background:rgba(191,90,242,.2)}.rl{color:#FF9F0A;background:rgba(255,159,10,.2)}.rm{color:#FF453A;background:rgba(255,69,58,.2)}.rg{color:#FFD60A;background:rgba(255,214,10,.2)}
+.ba{background:rgba(255,255,255,.1);color:var(--blue);border:none;padding:8px 12px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;margin-left:4px}.bgr{color:var(--green)}.bor{color:#FF9F0A}
+.ch{padding:16px;font-size:22px;font-weight:700;display:flex;justify-content:space-between}
+.cm{flex:1;overflow-y:auto;padding:0 16px;display:flex;flex-direction:column;gap:8px;height:calc(100vh - 320px)}
+.cmsg{background:var(--glass);border-radius:14px;padding:8px 12px;max-width:80%;border:1px solid var(--border)}.cmsg.mine{align-self:flex-end;background:rgba(10,132,255,.3)}
+.ca{font-size:11px;color:var(--blue);font-weight:700;margin-bottom:2px}.ctx{font-size:14px;word-wrap:break-word}
+.cib{display:flex;gap:8px;padding:12px 16px calc(env(safe-area-inset-bottom) + 100px)}
+.cib input{flex:1;background:rgba(255,255,255,.1);border:1px solid var(--border);border-radius:20px;padding:12px 16px;color:#fff;font-size:15px;outline:none}
+.cib button{width:46px;height:46px;border-radius:50%;background:var(--blue);color:#fff;border:none;font-size:18px;cursor:pointer}
+.toast{position:fixed;top:calc(env(safe-area-inset-top) + 60px);left:50%;transform:translateX(-50%) translateY(-20px);background:rgba(44,44,46,.95);padding:14px 24px;border-radius:30px;font-size:15px;font-weight:600;opacity:0;transition:.3s;z-index:999;pointer-events:none;text-align:center}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+:root{--blue:#a855f7;--glass:rgba(32,19,52,.78);--border:rgba(180,119,255,.22)}
+body{background-image:radial-gradient(circle at 12% 12%,rgba(134,53,235,.26),transparent 42%),radial-gradient(circle at 90% 85%,rgba(191,90,242,.18),transparent 48%),linear-gradient(160deg,#10071c,#05030a)}
+.w{box-shadow:0 12px 55px rgba(104,37,183,.17)}
+.btn{background:linear-gradient(120deg,#8732df,#c260fa)}
+.wheel{border-color:#a855f7;box-shadow:0 0 30px rgba(158,72,244,.32)}
+
+:root{--blue:#20d6c7;--glass:rgba(12,32,42,.8);--border:rgba(69,225,210,.18);--gray:#96b2b7}
+body{background:#061017;background-image:radial-gradient(ellipse at 10% 10%,rgba(17,149,159,.22),transparent 45%),radial-gradient(ellipse at 95% 90%,rgba(21,90,123,.25),transparent 50%),linear-gradient(145deg,#071923,#050b12)}
+.w{background:linear-gradient(150deg,rgba(13,45,56,.92),rgba(7,20,31,.95));border:1px solid rgba(62,217,202,.25);box-shadow:0 18px 55px rgba(0,0,0,.25)}
+.btn{background:linear-gradient(115deg,#0a8d9a,#20d6c7);color:#04191c;box-shadow:0 8px 24px rgba(18,207,194,.18)}
+.spin-stage{height:220px;width:100%;display:flex;align-items:center;justify-content:center;position:relative;perspective:850px;margin:4px 0 2px}
+.stage-glow{position:absolute;width:165px;height:165px;border-radius:50%;background:#1ee8d3;filter:blur(65px);opacity:.22;pointer-events:none}
+.sim-spinner{height:175px;width:140px;display:flex;align-items:center;justify-content:center;transform-style:preserve-3d;transition:transform 4s cubic-bezier(.18,.7,.18,1);z-index:1}
+.sim-spinner .sim-card{width:132px!important;height:164px!important;clip-path:polygon(19% 0,100% 0,100% 100%,0 100%,0 17%);border-radius:13px;box-shadow:8px 20px 38px rgba(0,0,0,.45);backface-visibility:visible}
+.sim-spinner .sim-chip{width:51px!important;height:42px!important;padding:4px!important;border-radius:7px!important}
+.sim-spinner .logo{font-size:12px;bottom:13px;letter-spacing:1.5px}
+.sim-spinner .flag{font-size:20px;top:12px;right:12px}
+.spin-caption{font-size:10px;letter-spacing:3px;color:#64cfc7;margin-bottom:17px;font-weight:700}
+.sb{color:#c2eeec}
+
+.dock{padding:10px 8px;gap:3px}.di{flex:1;min-width:0;width:auto;font-size:22px}
+.wa-profile{padding:22px 18px 130px;max-width:540px;margin:auto}.wa-title{font-size:30px;margin:4px 0 24px;letter-spacing:-.7px}
+.wa-head{display:flex;align-items:center;gap:17px;margin-bottom:30px}.wa-avatar{width:86px;height:86px;border-radius:50%;background:linear-gradient(145deg,#25c6aa,#137f80);display:grid;place-items:center;color:#fff;font-size:38px;font-weight:700;box-shadow:0 8px 28px #0bb69e33;flex-shrink:0}.wa-avatar{overflow:hidden;cursor:pointer;position:relative}.wa-avatar img{width:100%;height:100%;object-fit:cover;display:block}.wa-person{display:flex;flex-direction:column;gap:5px;min-width:0}.wa-person strong{font-size:23px;overflow-wrap:anywhere}.wa-person small{color:#aab5b8;font-size:14px}.wa-status{color:#49c9ad;font-size:12px;margin-top:5px}
+.wa-group{border:1px solid #ffffff17;background:#152126;border-radius:18px;overflow:hidden;margin-bottom:18px}.wa-item{width:100%;display:flex;align-items:center;gap:15px;text-align:left;padding:17px 16px;color:#f4faf9;background:none;border:0;font:inherit}.wa-item+.wa-item{border-top:1px solid #ffffff14}.wa-item>span:nth-child(2){display:flex;flex-direction:column;gap:5px;flex:1;min-width:0}.wa-item b{font-size:15px;font-weight:600}.wa-item small{font-size:12px;color:#9baead;overflow-wrap:anywhere}.wa-icon{width:39px;height:39px;display:grid;place-items:center;border-radius:12px;background:#21413f;color:#7be6d3;font-size:23px}.wa-chevron{font-size:28px;color:#77918d}.wa-logout{width:100%;border:1px solid #c85c6655;background:#45212766;color:#ff939d;border-radius:16px;padding:16px;font-size:15px;font-weight:650;cursor:pointer}
+
+.di svg{width:24px;height:24px;display:block}.di{color:#a9bbc0;background:transparent!important;transition:color .2s,background .2s}.di.active{color:#7ef0db;background:#244f4b!important}.dock{padding:8px 5px;gap:2px}.prize-page{padding:24px 20px 130px;text-align:center;max-width:480px;margin:auto}.prize-page h2{font-size:28px;margin:6px 0}.prize-sub{font-size:13px;line-height:1.5;color:#a9b9bd}.prize-wheel-wrap{width:min(75vw,290px);aspect-ratio:1;margin:28px auto;position:relative}.prize-wheel{width:100%;height:100%;border-radius:50%;border:7px solid #304a50;background:conic-gradient(#29b6a8 0 40%,#4771d2 40% 65%,#b267db 65% 80%,#e4a748 80% 92%,#ec7972 92% 98%,#cba7f2 98% 100%);box-shadow:0 0 30px #29b6a833;transition:transform 4s cubic-bezier(.12,.7,.12,1);display:grid;place-items:center}.prize-hub{width:66px;height:66px;border-radius:50%;background:#142a30;border:5px solid #e5faf6;display:grid;place-items:center;font-size:30px}.prize-arrow{position:absolute;top:-22px;left:50%;transform:translateX(-50%);z-index:2;color:white;font-size:28px}.prize-result{font-size:20px;font-weight:750;min-height:34px;margin-bottom:15px}.odds{text-align:left;margin-top:24px;border:1px solid #ffffff26;background:#15252b;border-radius:20px;padding:18px;display:grid;gap:10px;font-size:14px}.odds b{margin-bottom:4px}
+
+.tasks-page{padding:22px 18px 140px;max-width:520px;margin:auto}.tasks-page h2{margin:5px 0 7px;font-size:25px}.task-card{background:rgba(25,43,47,.9);border:1px solid #ffffff20;border-radius:19px;padding:17px;margin:13px 0}.task-top{display:flex;justify-content:space-between;gap:10px;align-items:center}.task-card p{color:#a7bec1;font-size:13px;margin:8px 0}.task-progress{height:7px;background:#34454b;border-radius:20px;overflow:hidden;margin:12px 0}.task-progress span{display:block;height:100%;background:#54d9c1;border-radius:20px}.task-card button{border:0;border-radius:11px;padding:10px 15px;background:#49c9b3;color:#082422;font-weight:800}.task-card button:disabled{opacity:.5}.task-reward{color:#76e2be;font-weight:750;font-size:13px}
+</style>
+
+</head>
+<body><div id="auth" style="position:fixed;inset:0;z-index:10000;background:#080b13;display:flex;align-items:center;justify-content:center;padding:22px"><form id="authForm" style="background:#141c29;border:1px solid #325c66;border-radius:24px;padding:24px;width:min(100%,390px);display:grid;gap:13px"><h2 style="margin:0">📱 SIMVERSE · Локальная игра</h2><p style="color:#aab6c6;margin:0">Регистрация и вход работают без сервера</p><input id="login" placeholder="Логин (латиница)" required minlength="3" maxlength="20" style="padding:14px;border-radius:12px"><input id="password" placeholder="Пароль (от 8 символов)" type="password" required minlength="8" style="padding:14px;border-radius:12px"><div id="authError" style="color:#ff8d8d"></div><button class="btn" type="submit" data-mode="login">Войти</button><button class="btn" type="button" id="register" style="background:#29475b">Зарегистрироваться</button><small style="color:#9da8b5">Аккаунты сохраняются только в этом браузере. Не очищай данные браузера, если хочешь сохранить прогресс.</small></form></div>
+<div class="sb"><span id="clock">9:41</span><span style="font-weight:750;color:#83dccc">SIMVERSE</span></div>
+<div id="tab-home" class="tab active">
+<div class="grid">
+<div class="w">
+<div class="spin-stage"><div class="stage-glow"></div><div class="sim-spinner" id="wheel"><div class="sim-card type-mini" id="simCard"><div class="flag" id="simFlag">🌍</div><div class="sim-chip"><div></div><div></div><div></div><div></div></div><div class="logo" id="simLogo">SIM</div></div></div></div><div class="spin-caption">WORLD SIM · RANDOM DROP</div>
+<div class="num" id="num">+7 999 000-00-00</div><div class="combo" id="combo">Крутить</div>
+<button class="btn" id="btn" onclick="spin()">Крутить — 100 000 ₽</button>
+</div>
+<div class="sw"><div><div class="st">Баланс</div><div class="sv" id="bal">5 000 000 000 ₽</div></div><div class="sd" id="gar">Гараж: 0/50</div></div>
+
+</div>
+</div>
+<div id="tab-garage" class="tab"><div class="lc" id="glist"></div></div>
+<div id="tab-market" class="tab"><div style="padding:15px;color:#b8a6c8;font-size:13px">Личный рынок (только на этом устройстве).</div><div class="lc" id="mlist"></div></div>
+<div id="tab-chat" class="tab"><div class="ch"><span>Личный чат</span></div><div class="cm" id="cmsg"></div><div class="cib"><input id="cin" placeholder="Сообщение..." maxlength="200"><button onclick="sendMsg()">➤</button></div></div>
+<div id="tab-prizes" class="tab"><section class="prize-page"><h2>Колесо призов</h2><p class="prize-sub">Бесплатный ежедневный подарок. ₽ — только виртуальная игровая валюта, без реальных денег.</p><div class="prize-wheel-wrap"><div class="prize-arrow">▼</div><div id="prizeWheel" class="prize-wheel"><div class="prize-hub">✦</div></div></div><div id="prizeResult" class="prize-result" aria-live="polite">Испытай удачу!</div><button id="prizeButton" class="btn" onclick="spinPrize()">Бесплатное вращение</button><p id="prizeCooldown" class="prize-sub"></p><div class="odds"><b>Шансы выпадения</b><div>10 000 ₽ — 40%</div><div>50 000 ₽ — 25%</div><div>100 000 ₽ — 15%</div><div>Обычный номер — 12%</div><div>Редкий номер — 6%</div><div>Эпический номер — 2%</div></div></section></div>
+<div id="tab-tasks" class="tab"><section class="tasks-page"><h2>📋 Ежедневные задания</h2><p class="prize-sub">Выполняй задания каждый день и получай виртуальные игровые кредиты. Обновление в полночь по времени телефона.</p><div id="tasksList"></div></section></div>
+<div id="tab-profile" class="tab"><div class="wa-profile">
+<h2 class="wa-title">Профиль</h2>
+<div class="wa-head"><button type="button" class="wa-avatar" id="avatarLetter" onclick="document.getElementById('avatarUpload').click()" title="Поменять фото профиля">?</button><input type="file" id="avatarUpload" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="setAvatar(event)"><div class="wa-person"><strong id="profileNick">Игрок</strong><small id="profileLogin">@username</small><span class="wa-status">● Личный аккаунт</span></div></div>
+<div class="wa-group"><button class="wa-item" onclick="document.getElementById('avatarUpload').click()"><span class="wa-icon">▣</span><span><b>Фото профиля</b><small>Выбрать фотографию из галереи</small></span><span class="wa-chevron">›</span></button><button class="wa-item" onclick="changeNick()"><span class="wa-icon">✎</span><span><b>Имя</b><small id="profileNickSub">Изменить никнейм</small></span><span class="wa-chevron">›</span></button><div class="wa-item"><span class="wa-icon">＠</span><span><b>Логин</b><small id="profileLoginSub">—</small></span></div></div>
+<div class="wa-group"><div class="wa-item"><span class="wa-icon">🔒</span><span><b>Приватность</b><small>Данные хранятся только в этом браузере</small></span></div><div class="wa-item"><span class="wa-icon">📱</span><span><b>SIMVERSE PRIVATE</b><small>Локальная версия · без общего сервера</small></span></div></div>
+<button class="wa-logout" onclick="logout()">Выйти из аккаунта</button>
+</div></div>
+<div class="dock"><div class="di" onclick="switchTab('tasks',this)" aria-label="Задания" title="Задания"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8 9 2 2 4-4M8 16h8"/></svg></div><div class="di" onclick="switchTab('prizes',this)" aria-label="Призы"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 6M12 12l-7 6"/></svg></div><div class="di active" onclick="switchTab('home',this)"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7v9H4z"/><path d="M9 20v-7h6v7"/></svg></div><div class="di" onclick="switchTab('garage',this)"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M8 15h8"/></svg></div><div class="di" onclick="switchTab('market',this)"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16l-1 12H5L4 9ZM3 9l2-5h14l2 5M9 13v3m6-3v3"/></svg></div><div class="di" onclick="switchTab('chat',this)"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 1-8 8 9 9 0 0 1-4-.9L3 20l1.8-5A8 8 0 1 1 20 11Z"/><path d="M8 11h8"/></svg></div><div class="di" onclick="switchTab('profile',this)" aria-label="Профиль"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+let UID='',UNAME='';
+const accountsKey='simverse_accounts_v1';
+const accounts=()=>JSON.parse(localStorage.getItem(accountsKey)||'{}');
+const digest=async(value)=>{
+// SHA-256 is available on HTTPS, but not always when HTML is opened as file://.
+if(globalThis.crypto?.subtle){const bytes=new TextEncoder().encode(value);const hash=await crypto.subtle.digest('SHA-256',bytes);return Array.from(new Uint8Array(hash),x=>x.toString(16).padStart(2,'0')).join('')}
+// Local-only fallback for file:// browsers. Not suitable for online authentication.
+let h=2166136261;for(let i=0;i<value.length;i++){h^=value.charCodeAt(i);h=Math.imul(h,16777619)}return 'local-'+(h>>>0).toString(16)
+};
+const db={},ref=(_,path)=>path;
+const push=path=>path+'/'+Date.now().toString(36)+Math.random().toString(36).slice(2);
+const read=path=>JSON.parse(localStorage.getItem('simverse_local_'+path)||'{}');
+const observers={};
+const onValue=(path,fn)=>{(observers[path]??=[]).push(fn);fn({val:()=>read(path)})};
+const notify=path=>(observers[path]||[]).forEach(fn=>fn({val:()=>read(path)}));
+const set=async(path,value)=>{const [root,...parts]=path.split('/');const data=read(root);data[parts.join('/')]=value;localStorage.setItem('simverse_local_'+root,JSON.stringify(data));notify(root)};
+const get=async(path)=>{const [root,...parts]=path.split('/');return {val:()=>read(root)[parts.join('/')]||null}};
+const remove=async(path)=>{const [root,...parts]=path.split('/');const data=read(root);delete data[parts.join('/')];localStorage.setItem('simverse_local_'+root,JSON.stringify(data));notify(root)};
+const authForm=document.getElementById('authForm');
+async function authenticate(mode){
+const err=document.getElementById('authError');err.textContent='';
+try{
+const username=document.getElementById('login').value.trim().toLowerCase();
+const password=document.getElementById('password').value;
+if(!/^[a-z0-9_]{3,20}$/.test(username))throw Error('Логин: 3–20 символов, латиница, цифры или _');
+if(password.length<8)throw Error('Пароль должен содержать минимум 8 символов');
+const all=accounts();
+if(mode==='register'){
+if(all[username])throw Error('Такой логин уже занят');
+all[username]={hash:await digest(username+':'+password),nick:username};
+localStorage.setItem(accountsKey,JSON.stringify(all));
+}else{
+if(!all[username]||all[username].hash!==await digest(username+':'+password))throw Error('Неверный логин или пароль');
+}
+initUser({id:username,nick:all[username].nick});
+}catch(e){err.textContent=e.message||'Не удалось сохранить аккаунт. Проверь настройки браузера'}
+}
+function initUser(user){UID=user.id;UNAME=user.nick;document.getElementById('auth').style.display='none';renderProfile();state=JSON.parse(localStorage.getItem('pg_'+UID)||'null')||{balance:3000000,storageSlots:50,garage:[],lastBonus:0};updateUI();renderTasks();if(!window.started){window.started=true;startRealtime()}}
+authForm.addEventListener('submit',e=>{e.preventDefault();authenticate('login')});
+document.getElementById('register').onclick=()=>{if(!authForm.reportValidity())return;authenticate('register')};
+function renderProfile(){const avatar=document.getElementById('avatarLetter');const photo=UID?localStorage.getItem('simverse_avatar_'+UID):null;avatar.replaceChildren();if(photo){const img=document.createElement('img');img.src=photo;img.alt='Фото профиля';avatar.appendChild(img)}else avatar.textContent=(UNAME||'?').slice(0,1).toUpperCase();document.getElementById('profileNick').textContent=UNAME;document.getElementById('profileNickSub').textContent=UNAME;document.getElementById('profileLogin').textContent='@'+UID;document.getElementById('profileLoginSub').textContent=UID;}
+window.setAvatar=async(event)=>{const file=event.target.files?.[0];if(!file||!UID)return;if(!['image/jpeg','image/png','image/webp'].includes(file.type))return showToast('Выбери JPG, PNG или WebP');if(file.size>10*1024*1024)return showToast('Фото должно быть меньше 10 МБ');try{const bitmap=await createImageBitmap(file);const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;const ctx=canvas.getContext('2d');const side=Math.min(bitmap.width,bitmap.height);ctx.drawImage(bitmap,(bitmap.width-side)/2,(bitmap.height-side)/2,side,side,0,0,256,256);bitmap.close();localStorage.setItem('simverse_avatar_'+UID,canvas.toDataURL('image/jpeg',.78));renderProfile();showToast('Фото профиля обновлено')}catch(e){showToast('Не удалось сохранить фото')}event.target.value=''};
+window.logout=()=>{UID='';UNAME='';document.getElementById('password').value='';document.getElementById('auth').style.display='flex';document.querySelector('.dock .di').click();};
+window.changeNick=()=>{const nick=prompt('Новый ник (2–24 символа)',UNAME);if(nick===null)return;if(nick.trim().length<2||nick.trim().length>24)return showToast('Ник: 2–24 символа');const all=accounts();all[UID].nick=nick.trim();localStorage.setItem(accountsKey,JSON.stringify(all));UNAME=nick.trim();renderProfile();showToast('Ник изменён')};
+setInterval(()=>{const d=new Date();document.getElementById('clock').innerText=d.getHours()+":"+d.getMinutes().toString().padStart(2,'0')},1000);
+window.switchTab=(t,b)=>{document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.di').forEach(e=>e.classList.remove('active'));document.getElementById('tab-'+t).classList.add('active');b.classList.add('active');if(t==='garage')taskAdvance('garage');if(t==='profile')taskAdvance('profile');if(t==='tasks')renderTasks()};
+
+const OPS=[
+{c:["999","997","996","995","994","993","992","991"],n:"МТС",col:"#E30611",flag:"🇷🇺",pref:"+7"},{c:["916","917","903","905","906","909","962","963","964","965","966","967","968"],n:"Билайн",col:"#FFCC00",flag:"🇷🇺",pref:"+7"},{c:["926","927","928","929","936","937","938","939","980","981","982","983","984","985","986","987","988","989"],n:"Мегафон",col:"#00B956",flag:"🇷🇺",pref:"+7"},{c:["901","902","904","908","950","951","952","953","958","960"],n:"Tele2",col:"#004ECC",flag:"🇷🇺",pref:"+7"},{c:["911","912","913","914","915","919","921","922","923","924","925"],n:"Yota",col:"#2FB5FF",flag:"🇷🇺",pref:"+7"},
+{c:["29","33","44"],n:"A1",col:"#E30611",flag:"🇧🇾",pref:"+375"},{c:["25","33","44"],n:"Life",col:"#8E44AD",flag:"🇧🇾",pref:"+375"},{c:["29","33","44"],n:"МТС",col:"#E30611",flag:"🇧🇾",pref:"+375"},
+{c:["50","66","95","99"],n:"Vodafone",col:"#E30611",flag:"🇺🇦",pref:"+380"},{c:["67","68","96","97","98"],n:"Kyivstar",col:"#0A84FF",flag:"🇺🇦",pref:"+380"},{c:["63","73","93"],n:"lifecell",col:"#FFD60A",flag:"🇺🇦",pref:"+380"},
+{c:["44"],n:"O2",col:"#004ECC",flag:"🇬🇧",pref:"+44"},{c:["44"],n:"Vodafone",col:"#E30611",flag:"🇬🇧",pref:"+44"},{c:["49"],n:"T-Mobile",col:"#E30611",flag:"🇩🇪",pref:"+49"},{c:["33"],n:"Orange",col:"#FF9F0A",flag:"🇫🇷",pref:"+33"},{c:["34"],n:"Movistar",col:"#0A84FF",flag:"🇪🇸",pref:"+34"},
+{c:["212","415","305","702"],n:"Verizon",col:"#E30611",flag:"🇺🇸",pref:"+1"},{c:["310","213","917","646"],n:"AT&T",col:"#0A84FF",flag:"🇺🇸",pref:"+1"},{c:["206","312","469"],n:"T-Mobile",col:"#E30611",flag:"🇺🇸",pref:"+1"},
+{c:["6"],n:"KPN",col:"#7436db",flag:"🇳🇱",pref:"+31"},
+{c:["4"],n:"Proximus",col:"#6b3ce7",flag:"🇧🇪",pref:"+32"},
+{c:["3"],n:"TIM",col:"#3567dd",flag:"🇮🇹",pref:"+39"},
+{c:["9"],n:"MEO",col:"#6b46d9",flag:"🇵🇹",pref:"+351"},
+{c:["5"],n:"Orange",col:"#ef8b23",flag:"🇵🇱",pref:"+48"},
+{c:["7"],n:"Telia",col:"#7b3ae0",flag:"🇸🇪",pref:"+46"},
+{c:["9"],n:"Telenor",col:"#3d8adf",flag:"🇳🇴",pref:"+47"},
+{c:["4"],n:"Elisa",col:"#793fe1",flag:"🇫🇮",pref:"+358"},
+{c:["7"],n:"Swisscom",col:"#d74367",flag:"🇨🇭",pref:"+41"},
+{c:["6"],n:"A1",col:"#c72b55",flag:"🇦🇹",pref:"+43"},
+{c:["5"],n:"Turkcell",col:"#e1aa24",flag:"🇹🇷",pref:"+90"},
+{c:["9"],n:"Jio",col:"#5268db",flag:"🇮🇳",pref:"+91"},
+{c:["8"],n:"NTT Docomo",col:"#d52d58",flag:"🇯🇵",pref:"+81"},
+{c:["1"],n:"SK Telecom",col:"#e35b48",flag:"🇰🇷",pref:"+82"},
+{c:["1"],n:"China Mobile",col:"#438ddf",flag:"🇨🇳",pref:"+86"},
+{c:["9"],n:"Vivo",col:"#843cdb",flag:"🇧🇷",pref:"+55"},
+{c:["5"],n:"Telcel",col:"#357fdb",flag:"🇲🇽",pref:"+52"},
+{c:["4"],n:"Telstra",col:"#4b83e4",flag:"🇦🇺",pref:"+61"},
+{c:["2"],n:"Spark",col:"#ed843a",flag:"🇳🇿",pref:"+64"},
+{c:["416"],n:"Rogers",col:"#d53750",flag:"🇨🇦",pref:"+1"},
+{c:["7"],n:"Vodacom",col:"#e13b51",flag:"🇿🇦",pref:"+27"},
+{c:["1"],n:"Orange",col:"#ec9229",flag:"🇪🇬",pref:"+20"},
+{c:["5"],n:"e&",col:"#32a2a1",flag:"🇦🇪",pref:"+971"},
+{c:["5"],n:"STC",col:"#6c4ee2",flag:"🇸🇦",pref:"+966"},
+{c:["8"],n:"Telkomsel",col:"#d84959",flag:"🇮🇩",pref:"+62"},
+{c:["8"],n:"AIS",col:"#55a954",flag:"🇹🇭",pref:"+66"},
+{c:["9"],n:"Viettel",col:"#34a0a2",flag:"🇻🇳",pref:"+84"},
+{c:["8"],n:"Singtel",col:"#e54852",flag:"🇸🇬",pref:"+65"},
+{c:["1"],n:"Maxis",col:"#49ad68",flag:"🇲🇾",pref:"+60"},
+{c:["9"],n:"Personal",col:"#6e43dd",flag:"🇦🇷",pref:"+54"}
+,
+{c:["206"],n:"T-Mobile",col:"#6d5be7",flag:"🇺🇸",pref:"+1"},
+{c:["15"],n:"Telekom",col:"#6d5be7",flag:"🇩🇪",pref:"+49"},
+{c:["6"],n:"Orange",col:"#6d5be7",flag:"🇫🇷",pref:"+33"},
+{c:["7"],n:"EE",col:"#6d5be7",flag:"🇬🇧",pref:"+44"},
+{c:["6"],n:"KPN",col:"#6d5be7",flag:"🇳🇱",pref:"+31"},
+{c:["4"],n:"Proximus",col:"#6d5be7",flag:"🇧🇪",pref:"+32"},
+{c:["3"],n:"TIM",col:"#6d5be7",flag:"🇮🇹",pref:"+39"},
+{c:["6"],n:"Movistar",col:"#6d5be7",flag:"🇪🇸",pref:"+34"},
+{c:["5"],n:"Orange",col:"#6d5be7",flag:"🇵🇱",pref:"+48"},
+{c:["7"],n:"Telia",col:"#6d5be7",flag:"🇸🇪",pref:"+46"},
+{c:["8"],n:"Docomo",col:"#6d5be7",flag:"🇯🇵",pref:"+81"},
+{c:["1"],n:"SKT",col:"#6d5be7",flag:"🇰🇷",pref:"+82"},
+{c:["9"],n:"Jio",col:"#6d5be7",flag:"🇮🇳",pref:"+91"},
+{c:["1"],n:"China Mobile",col:"#6d5be7",flag:"🇨🇳",pref:"+86"},
+{c:["9"],n:"Vivo",col:"#6d5be7",flag:"🇧🇷",pref:"+55"},
+{c:["5"],n:"Telcel",col:"#6d5be7",flag:"🇲🇽",pref:"+52"},
+{c:["416"],n:"Rogers",col:"#6d5be7",flag:"🇨🇦",pref:"+1"},
+{c:["4"],n:"Telstra",col:"#6d5be7",flag:"🇦🇺",pref:"+61"},
+{c:["5"],n:"Turkcell",col:"#6d5be7",flag:"🇹🇷",pref:"+90"},
+{c:["5"],n:"e&",col:"#6d5be7",flag:"🇦🇪",pref:"+971"},
+{c:["8"],n:"Singtel",col:"#6d5be7",flag:"🇸🇬",pref:"+65"},
+{c:["7"],n:"Vodacom",col:"#6d5be7",flag:"🇿🇦",pref:"+27"},
+{c:["9"],n:"Personal",col:"#6d5be7",flag:"🇦🇷",pref:"+54"},
+{c:["8"],n:"AIS",col:"#6d5be7",flag:"🇹🇭",pref:"+66"},
+{c:["9"],n:"Viettel",col:"#6d5be7",flag:"🇻🇳",pref:"+84"}];
+const CODES=[];OPS.forEach(o=>o.c.forEach(c=>CODES.push({c,n:o.n,col:o.col,flag:o.flag,pref:o.pref})));
+const RAR={common:"Обычный",rare:"Редкий",epic:"Эпик",legendary:"Легендарный",mythic:"Мифический",gold:"Золотой"};
+const RC={common:"rc",rare:"rr",epic:"re",legendary:"rl",mythic:"rm",gold:"rg"};
+const SIM_TYPES={common:"type-nano",rare:"type-nano",epic:"type-micro",legendary:"type-micro",mythic:"type-mini",gold:"type-mini"};
+
+let state={balance:3000000,storageSlots:50,garage:[],lastBonus:0};
+
+function save(){localStorage.setItem('pg_'+UID,JSON.stringify(state));updateUI()}
+
+window.gen=()=>{
+const op=CODES[Math.floor(Math.random()*CODES.length)];const fancy=Math.random()<.3;let fs="",cn="Обычный",r="common",pr=2000;
+if(fancy){
+const CL=[{n:"Все одинаковые",r:"gold",p:8880000},{n:"Все нули",r:"gold",p:5000000},{n:"Восемь восьмерок",r:"gold",p:4000000},{n:"Девять девяток",r:"gold",p:4000000},{n:"Четыре в начале",r:"mythic",p:1000000},{n:"Четыре подряд",r:"legendary",p:500000},{n:"Три тройки",r:"legendary",p:300000},{n:"По порядку",r:"legendary",p:250000},{n:"Обратный",r:"legendary",p:250000},{n:"Три пары",r:"epic",p:100000},{n:"Зеркало",r:"epic",p:80000},{n:"Две пары",r:"epic",p:50000},{n:"Код 999",r:"legendary",p:200000},{n:"Код 888",r:"legendary",p:200000},{n:"Три одинаковые",r:"rare",p:10000},{n:"Пара",r:"common",p:5000}];
+const c=CL[Math.floor(Math.random()*CL.length)];cn=c.n;r=c.r;pr=c.p;
+if(c.n==="Все одинаковые"){const d=Math.floor(Math.random()*10);fs=op.c+String(d).repeat(7)}
+else if(c.n==="Все нули")fs=op.c+"0000000";
+else if(c.n==="Восемь восьмерок")fs="8888888888";
+else if(c.n==="Девять девяток")fs="9999999999";
+else if(c.n==="Четыре в начале"){const d=Math.floor(Math.random()*10);fs=op.c+String(d).repeat(4)+Math.floor(Math.random()*1000).toString().padStart(3,'0')}
+else if(c.n==="Четыре подряд"){const d=Math.floor(Math.random()*10);fs=op.c+Math.floor(Math.random()*1000).toString().padStart(3,'0')+String(d).repeat(4)}
+else if(c.n==="Три тройки"){const d=Math.floor(Math.random()*10);fs=op.c+String(d).repeat(7)}
+else if(c.n==="По порядку")fs=op.c+"1234567";
+else if(c.n==="Обратный")fs=op.c+"7654321";
+else if(c.n==="Три пары"){const d1=Math.floor(Math.random()*10),d2=Math.floor(Math.random()*10),d3=Math.floor(Math.random()*10);fs=op.c+`${d1}${d1}${d2}${d2}${d3}${d3}${Math.floor(Math.random()*10)}`}
+else if(c.n==="Зеркало"){const d1=Math.floor(Math.random()*10);fs=op.c+`${d1}${d1}${d1}${d1}${d1}${d1}${Math.floor(Math.random()*10)}`}
+else if(c.n==="Две пары"){const d1=Math.floor(Math.random()*10),d2=Math.floor(Math.random()*10);fs=op.c+`${d1}${d1}${d2}${d2}${Math.floor(Math.random()*1000).toString().padStart(3,'0')}`}
+else if(c.n==="Код 999")fs="999"+Math.floor(Math.random()*10000000).toString().padStart(7,'0');
+else if(c.n==="Код 888")fs="888"+Math.floor(Math.random()*10000000).toString().padStart(7,'0');
+else if(c.n==="Три одинаковые"){const d=Math.floor(Math.random()*10);fs=op.c+Math.floor(Math.random()*1000).toString().padStart(3,'0')+String(d).repeat(3)+Math.floor(Math.random()*1000).toString().padStart(3,'0')}
+else if(c.n==="Пара"){const d=Math.floor(Math.random()*10);fs=op.c+Math.floor(Math.random()*100000).toString().padStart(5,'0')+String(d).repeat(2)}
+}else{fs=op.c+Math.floor(Math.random()*10000000).toString().padStart(7,'0')}
+
+let formatted="";
+if(op.pref==="+1")formatted=`${op.pref} (${fs.slice(0,3)}) ${fs.slice(3,6)}-${fs.slice(6,10)}`;
+else if(op.pref==="+375"||op.pref==="+380")formatted=`${op.pref} (${fs.slice(0,2)}) ${fs.slice(2,5)}-${fs.slice(5,7)}-${fs.slice(7,9)}`;
+else formatted=`${op.pref} ${fs.slice(0,3)} ${fs.slice(3,6)}-${fs.slice(6,8)}-${fs.slice(8,10)}`;
+
+return{number:formatted,combo:cn,rarity:r,price:pr,color:op.col,opName:op.n,flag:op.flag,simType:SIM_TYPES[r]}
+};
+
+window.setStyle=(col,name,rarity,flag,simType)=>{
+const c=document.getElementById('simCard'),l=document.getElementById('simLogo'),f=document.getElementById('simFlag');
+c.className='sim-card '+simType;c.style.background=`linear-gradient(135deg,${col} 0,#fff 40%,${col} 100%)`;
+l.style.color=name==='Билайн'?'rgba(0,0,0,.5)':'rgba(255,255,255,.9)';l.innerText=name;f.innerText=flag;
+};
+
+
+const taskDefinitions=[
+{id:'spin',name:'Первая SIM-карта',desc:'Сгенерируй один игровой номер',target:1,reward:25000},
+{id:'garage',name:'Коллекционер',desc:'Открой гараж',target:1,reward:15000},
+{id:'profile',name:'Знакомство',desc:'Открой свой профиль',target:1,reward:10000}
+];
+function taskDate(){const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')}
+function taskState(){if(!state)return null;if(state.tasksDay!==taskDate()){state.tasksDay=taskDate();state.tasksProgress={};state.tasksClaimed={};save()}state.tasksProgress??={};state.tasksClaimed??={};return state}
+function taskAdvance(id){if(!UID)return;const s=taskState();const task=taskDefinitions.find(t=>t.id===id);if(!task)return;s.tasksProgress[id]=Math.min(task.target,(s.tasksProgress[id]||0)+1);save();renderTasks()}
+window.claimTask=id=>{const s=taskState();const task=taskDefinitions.find(t=>t.id===id);if(!task||s.tasksClaimed[id]||(s.tasksProgress[id]||0)<task.target)return;s.tasksClaimed[id]=true;s.balance+=task.reward;save();renderTasks();showToast('Награда: +'+task.reward.toLocaleString('ru-RU')+' ₽')};
+function renderTasks(){const box=document.getElementById('tasksList');if(!box||!UID)return;const s=taskState();box.replaceChildren();taskDefinitions.forEach(t=>{const n=s.tasksProgress[t.id]||0;const claimed=!!s.tasksClaimed[t.id];const card=document.createElement('div');card.className='task-card';const top=document.createElement('div');top.className='task-top';const name=document.createElement('strong');name.textContent=t.name;const reward=document.createElement('span');reward.className='task-reward';reward.textContent='+'+t.reward.toLocaleString('ru-RU')+' ₽';top.append(name,reward);const desc=document.createElement('p');desc.textContent=t.desc+' · '+n+'/'+t.target;const progress=document.createElement('div');progress.className='task-progress';const fill=document.createElement('span');fill.style.width=(100*n/t.target)+'%';progress.append(fill);const btn=document.createElement('button');btn.disabled=claimed||n<t.target;btn.textContent=claimed?'Получено ✓':n>=t.target?'Забрать награду':'Не выполнено';btn.onclick=()=>claimTask(t.id);card.append(top,desc,progress,btn);box.append(card)})}
+
+window.spin=()=>{
+if(state.balance<100000)return showToast("Нет денег!");
+if(state.garage.length>=state.storageSlots)return showToast("Гараж полон!");
+state.balance-=100000;save();
+const d=document.getElementById('num'),cd=document.getElementById('combo'),b=document.getElementById('btn'),wheel=document.getElementById('wheel');
+b.disabled=true;b.innerText="Крутим...";
+const spins=5+Math.floor(Math.random()*5);const deg=spins*360+Math.floor(Math.random()*360);
+wheel.style.transform=`rotateY(${deg}deg)`;
+setTimeout(()=>{
+const res=gen();d.innerText=res.number;cd.innerText=res.combo;cd.className='combo '+RC[res.rarity];setStyle(res.color,res.opName,res.rarity,res.flag,res.simType);
+b.disabled=false;b.innerText="Крутить — 100 000 ₽";state.garage.push(res);save();taskAdvance("spin");showToast(`Выпал ${RAR[res.rarity]}!`);
+setTimeout(()=>{wheel.style.transition='none';wheel.style.transform='rotateY(0deg)';setTimeout(()=>wheel.style.transition='transform 4s cubic-bezier(.18,.7,.18,1)',50)},100);
+},4000);
+};
+
+
+window.sellItem=i=>{const p=state.garage[i].price;state.balance+=p;state.garage.splice(i,1);save();showToast(`Продано за ${p.toLocaleString()} ₽`)};
+window.showToast=m=>{const t=document.getElementById('toast');t.innerText=m;t.classList.add('show');clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove('show'),2400)};
+
+function startRealtime(){onValue(ref(db,'market'),s=>{
+const data=s.val()||{},m=document.getElementById('mlist');if(!m)return;m.innerHTML='';
+const items=Object.entries(data).map(([id,v])=>({...v,fbId:id}));
+if(items.length===0)m.innerHTML='<div style="text-align:center;color:var(--gray);margin-top:40px">Рынок пуст</div>';
+items.forEach(it=>{m.innerHTML+=`<div class="li" style="border-left:4px solid ${it.color}"><div class="ii"><div class="it">${it.number}</div><div class="is">${it.flag} ${it.opName} <span class="bg ${RC[it.rarity]}">${RAR[it.rarity]}</span> · ${it.sellerName}</div><div style="color:var(--green);font-weight:700;font-size:14px;margin-top:4px">${it.price.toLocaleString()} ₽</div></div><button class="ba" onclick="buyLot('${it.fbId}')">Купить</button></div>`})});
+
+window.listOnMarket=async i=>{const it=state.garage[i];if(!it)return;try{await set(push(ref(db,'market')),{...it,sellerId:UID,sellerName:UNAME,price:Math.floor(it.price*1.2),ts:Date.now()});state.garage.splice(i,1);save();showToast('Выставлено на рынок')}catch(e){showToast(e.message)}};
+window.buyLot=async id=>{const s=await get(ref(db,'market/'+id)),it=s.val();if(!it)return showToast("Продано");if(state.balance<it.price)return showToast("Мало денег");if(state.garage.length>=state.storageSlots)return showToast("Гараж полон");state.balance-=it.price;delete it.fbId;delete it.sellerId;delete it.sellerName;state.garage.push(it);save();await remove(ref(db,'market/'+id));showToast('Куплено!')};
+
+onValue(ref(db,'chat'),s=>{
+const data=s.val()||{},msgs=Object.values(data).sort((a,b)=>a.ts-b.ts).slice(-100),box=document.getElementById('cmsg');if(!box)return;
+const bot=box.scrollHeight-box.scrollTop-box.clientHeight<60;
+const esc=x=>String(x).replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]));box.innerHTML=msgs.map(m=>`<div class="cmsg ${m.uid===UID?'mine':''}">${m.uid===UID?'':`<div class="ca">${esc(m.name)}</div>`}<div class="ctx">${esc(m.text)}</div></div>`).join('');
+if(bot)box.scrollTop=box.scrollHeight});
+
+window.sendMsg=()=>{const inp=document.getElementById('cin'),t=inp.value.trim();if(!t)return;inp.value='';set(push(ref(db,'chat')),{uid:UID,name:UNAME,text:t.slice(0,200),ts:Date.now()})};
+}
+document.getElementById('cin').addEventListener('keydown',e=>{if(e.key==='Enter')sendMsg()});
+
+function updateUI(){
+document.getElementById('bal').innerText=state.balance.toLocaleString()+' ₽';document.getElementById('gar').innerText=`Гараж: ${state.garage.length}/${state.storageSlots}`;
+const g=document.getElementById('glist');g.innerHTML='';
+if(state.garage.length===0)g.innerHTML='<div style="text-align:center;color:var(--gray);margin-top:40px">Гараж пуст</div>';
+else state.garage.forEach((it,i)=>{g.innerHTML+=`<div class="li" style="border-left:4px solid ${it.color}"><div class="ii"><div class="it">${it.number}</div><div class="is">${it.flag} ${it.opName} <span class="bg ${RC[it.rarity]}">${RAR[it.rarity]}</span> ${it.combo!=='Обычный'?`· ${it.combo}`:''}</div><div style="color:var(--green);font-weight:700;font-size:14px;margin-top:4px">${it.price.toLocaleString()} ₽</div></div><div style="display:flex;flex-direction:column;gap:8px"><button class="ba bgr" onclick="sellItem(${i})">Продать</button><button class="ba bor" onclick="listOnMarket(${i})">На рынок</button></div></div>`})}
+
+// Free, no-stake virtual reward wheel; probabilities are displayed in the UI.
+const prizeTable=[{weight:40,type:'credits',value:10000,label:'10 000 ₽'},{weight:25,type:'credits',value:50000,label:'50 000 ₽'},{weight:15,type:'credits',value:100000,label:'100 000 ₽'},{weight:12,type:'number',rarity:'common',label:'Обычный номер'},{weight:6,type:'number',rarity:'rare',label:'Редкий номер'},{weight:2,type:'number',rarity:'epic',label:'Эпический номер'}];
+let prizeBusy=false,prizeAngle=0;
+const prizeDay=()=>new Date().toLocaleDateString('en-CA');
+function updatePrizeButton(){const b=document.getElementById('prizeButton');if(!b)return;const used=state.lastPrizeDay===prizeDay();b.disabled=prizeBusy||used;b.textContent=prizeBusy?'Вращается…':used?'Уже получено сегодня':'Бесплатное вращение';document.getElementById('prizeCooldown').textContent=used?'Следующее бесплатное вращение — завтра.':''}
+window.spinPrize=()=>{
+if(prizeBusy||state.lastPrizeDay===prizeDay())return;
+if(state.garage.length>=state.storageSlots)return showToast('Освободи место в гараже для приза');
+prizeBusy=true;updatePrizeButton();
+const roll=Math.random()*100;let sum=0,idx=0;for(let i=0;i<prizeTable.length;i++){sum+=prizeTable[i].weight;if(roll<sum){idx=i;break}}
+const item=prizeTable[idx];const bounds=[0,40,65,80,92,98,100];const midpoint=(bounds[idx]+bounds[idx+1])/2;const target=(360-midpoint*3.6)%360;const current=((prizeAngle%360)+360)%360;prizeAngle+=1800+((target-current+360)%360);
+document.getElementById('prizeWheel').style.transform=`rotate(${prizeAngle}deg)`;
+setTimeout(()=>{if(item.type==='credits'){state.balance+=item.value}else{const num=gen();num.rarity=item.rarity;num.simType=SIM_TYPES[item.rarity];num.combo='Приз колеса';state.garage.push(num)}state.lastPrizeDay=prizeDay();save();document.getElementById('prizeResult').textContent='Получено: '+item.label;prizeBusy=false;updatePrizeButton();showToast('Приз добавлен!')},4100)
+};
+
+updateUI();updatePrizeButton();
+</script>
+<div style="position:fixed;bottom:calc(env(safe-area-inset-bottom) + 78px);right:12px;color:#aa9dbb;font-size:9px;pointer-events:none">SIMVERSE PRIVATE · игровые номера</div></body>
+</html>
